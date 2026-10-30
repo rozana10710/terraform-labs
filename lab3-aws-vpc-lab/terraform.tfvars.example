@@ -1,0 +1,7 @@
+# cp terraform.tfvars.example terraform.tfvars   (then edit)
+
+owner  = "your-name"
+region = "eu-west-1"
+
+# allowed_http_cidr  = "203.0.113.10/32"   # your public IP + /32
+# enable_nat_gateway = true                # private instance gets outbound internet (extra cost)

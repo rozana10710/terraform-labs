@@ -1,0 +1,10 @@
+# Provider plugins and local cache
+.terraform/
+
+# Never commit local state or crash logs
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Keep secret-bearing var files out of git if you ever create one
+secrets.auto.tfvars

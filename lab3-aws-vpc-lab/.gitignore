@@ -1,0 +1,12 @@
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+*.tfplan
+.terraformrc
+terraform.rc
+# .terraform.lock.hcl is NOT ignored on purpose — commit it.

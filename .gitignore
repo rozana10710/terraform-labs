@@ -1,0 +1,26 @@
+# Local provider plugins and modules
+**/.terraform/*
+
+# State files: may contain secrets, never commit
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Saved plan files
+*.tfplan
+
+# CLI configuration
+.terraformrc
+terraform.rc
+
+# Archives
+*.zip
+
+# macOS
+.DS_Store
+
+# NOTE: *.tfvars and .terraform.lock.hcl are NOT ignored on purpose.
+# The tfvars here hold lab values only (no secrets). Commit them.

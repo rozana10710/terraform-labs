@@ -1,0 +1,23 @@
+# Local provider plugins and modules
+**/.terraform/*
+
+# State files: may contain secrets, never commit
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Variable files often contain secrets
+*.tfvars
+*.tfvars.json
+
+# Saved plan files
+*.tfplan
+
+# CLI configuration
+.terraformrc
+terraform.rc
+
+# NOTE: .terraform.lock.hcl is NOT ignored on purpose. Commit it.
