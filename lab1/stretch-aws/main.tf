@@ -1,29 +1,29 @@
-provider "aws" {
-  region = "eu-west-1" # change to the region your trainer gives you
+terraform {
+  required_version = ">= 1.5.0"
 
-  default_tags {
-    tags = {
-      Course    = "terraform-bootcamp"
-      ManagedBy = "terraform"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
     }
   }
 }
 
-resource "random_pet" "bucket" {
-  length    = 2
-  separator = "--"
+provider "aws" {
+  region = "eu-west-1"
 }
 
 resource "aws_s3_bucket" "lab" {
-  bucket = "bootcamp-${random_pet.bucket.id}"
 
-  # Lets "terraform destroy" delete the bucket even if it contains objects.
-  # Fine for a lab — think twice before using this in real projects.
-  force_destroy = true
-
+  bucket = "bootcamp-rosanna-lab145398471386484314"
   tags = {
-    Name        = "bootcamp-${random_pet.bucket.id}"
     Environment = "dev"
-    Owner       = "rosanna" # <-- change me
+    Owner       = "test" # <-- change me
   }
+}
+
+
+
+output "bucket_name" {
+  value = aws_s3_bucket.lab.bucket
 }

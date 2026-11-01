@@ -1,6 +1,6 @@
 # Stretch Goal — S3 Bucket on AWS
 
-Create an S3 bucket whose name uses a random pet, so every student gets a unique name.
+Create an S3 bucket with a fixed name. Change it to include your own name.
 (S3 bucket names must be unique across ALL AWS accounts worldwide.)
 
 ## Before you start
@@ -16,7 +16,7 @@ aws sts get-caller-identity
 
 ## Steps
 
-1. Open `main.tf` and set your name in the `Owner` tag, and the region your trainer gives you.
+1. Open `main.tf` and set your name in the bucket name and the `Owner` tag, and the region your trainer gives you.
 2. Run the workflow:
 
 ```bash

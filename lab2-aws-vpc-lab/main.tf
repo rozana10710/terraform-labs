@@ -82,7 +82,7 @@ resource "aws_instance" "public" {
   subnet_id     = aws_subnet.public.id
 
   tags = {
-    Name = "lab-public-ec2"
+    Name = "lab-public-ec2" #name of the instance
   }
 }
 

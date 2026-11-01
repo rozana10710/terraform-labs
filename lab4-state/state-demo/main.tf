@@ -55,7 +55,7 @@ resource "aws_s3_bucket" "lab" {
 
   tags = {
     Name        = "bootcamp-${random_pet.bucket.id}"
-    Environment = "dev"
+    Environment = "prd"
     Owner       = "rosanna" # <-- change me
   }
 
