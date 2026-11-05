@@ -2,7 +2,7 @@
 # It creates 3 buckets with COUNT, tracked by POSITION: [0], [1], [2]
 
 locals {
-  demo_colors = ["red", "green", "blue"]
+  demo_colors = ["green", "blue"]
 }
 
 resource "aws_s3_bucket" "count_demo" {

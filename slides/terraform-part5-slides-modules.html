@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Section 5 · Terraform Modules · RiskRice Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;700&family=Roboto:wght@300;400;500&family=Roboto+Mono:wght@400;500&family=Cairo:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --page-bg: #e9edf1;
+  --navy-900: #082a42;
+  --navy-800: #0b3350;
+  --navy-700: #12405f;
+  --ink: #0e2b40;
+  --body: #56626d;
+  --muted: #8a949d;
+  --olive: #6f8f1e;
+  --olive-dark: #5b7716;
+  --lime: #c6e27c;
+  --pill-bg: #edf3df;
+  --card: #f5f7f9;
+  --line: #e1e6eb;
+  --code-bg: #0b3350;
+  --danger: #b4452f;
+  --danger-bg: #fbeeea;
+
+  /* Brand type: DIN Next for headings (Barlow loads as a close fallback), Roboto for body */
+  --font-head: "DIN Next", "DIN Next LT Pro", "DIN Next LT Arabic", "Barlow", "Roboto", sans-serif;
+  --font-body: "Roboto", "Cairo", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page-bg: #05192a; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page-bg: #05192a; color-scheme: dark; }
+
+/* Arabic: DIN Next Arabic headlines, Cairo body */
+:lang(ar) {
+  --font-head: "DIN Next Arabic", "DIN Next LT Arabic", "Cairo", sans-serif;
+  --font-body: "Cairo", "Roboto", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--page-bg);
+  font-family: var(--font-body);
+  font-weight: 400;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Stage: 1600x900 scaled to fit ---------- */
+.viewport {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+}
+.stage {
+  width: 1600px; height: 900px;
+  position: relative;
+  transform-origin: center center;
+  box-shadow: 0 30px 80px rgba(5, 25, 42, .25);
+}
+.slide {
+  position: absolute; inset: 0;
+  padding: 72px 96px 88px;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.slide.active { display: flex; }
+
+/* ---------- Light slides ---------- */
+.slide.light { background: #fff; color: var(--ink); }
+.slide.light .brand {
+  position: absolute; top: 44px; right: 72px;
+  font-family: var(--font-head); font-weight: 700; font-size: 22px; color: #3c5468;
+}
+.slide.light .brand span { color: var(--olive); }
+.slide .foot {
+  position: absolute; left: 96px; right: 72px; bottom: 40px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 15px; color: var(--muted); font-weight: 300;
+}
+.slide .foot .num { font-family: var(--font-mono); letter-spacing: .12em; }
+
+/* ---------- Dark slides ---------- */
+.slide.dark {
+  color: #f2f6f8;
+  background:
+    radial-gradient(700px 520px at 88% 14%, rgba(110, 160, 60, .38), transparent 70%),
+    linear-gradient(180deg, var(--navy-800), var(--navy-900));
+}
+.slide.dark::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+.slide.dark > *:not(.foot) { position: relative; }
+.slide.dark .foot { color: rgba(255,255,255,.45); }
+
+.lockup { display: flex; align-items: center; gap: 22px; }
+.wordmark { position: relative; font-family: var(--font-head); font-weight: 700; font-size: 44px; letter-spacing: .02em; color: #fff; line-height: 1; padding-top: 14px; }
+.wordmark img { position: absolute; top: -6px; left: 14px; width: 120px; }
+.lockup .div { width: 1px; height: 46px; background: rgba(255,255,255,.3); }
+.lockup .meta b { display: block; font-family: var(--font-head); font-weight: 500; font-size: 18px; letter-spacing: .04em; }
+.lockup .meta small { font-family: var(--font-mono); font-size: 13px; letter-spacing: .18em; color: rgba(255,255,255,.6); }
+
+/* ---------- Type ---------- */
+.pill {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 18px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 15px; letter-spacing: .14em; text-transform: uppercase;
+  background: var(--pill-bg); color: var(--olive-dark);
+  margin-bottom: 26px;
+}
+.pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--olive); }
+.dark .pill { background: rgba(198, 226, 124, .1); color: var(--lime); border: 1px solid rgba(198,226,124,.35); }
+.dark .pill::before { background: var(--lime); }
+
+h1, h2, h3 { font-family: var(--font-head); }
+h1 { font-weight: 700; font-size: 104px; line-height: 1.02; letter-spacing: -.01em; }
+h2 { font-weight: 700; font-size: 60px; line-height: 1.08; letter-spacing: -.005em; max-width: 1250px; }
+h3 { font-weight: 500; font-size: 28px; line-height: 1.2; }
+.hl { color: var(--olive); }
+.dark .hl { color: var(--lime); }
+.lead { font-size: 26px; font-weight: 300; color: var(--body); margin-top: 18px; max-width: 1100px; line-height: 1.45; }
+.dark .lead { color: rgba(255,255,255,.72); }
+p, li { font-size: 22px; line-height: 1.5; color: var(--body); }
+.note { font-weight: 300; font-size: 18px; color: var(--muted); }
+.dark p { color: rgba(255,255,255,.75); }
+.body { flex: 1; display: flex; flex-direction: column; justify-content: center; margin-top: 36px; }
+
+/* ---------- Components ---------- */
+.grid { display: grid; gap: 24px; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+.grid > * { min-width: 0; }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+  padding: 30px 30px 28px; position: relative;
+}
+.card::before { content: ""; position: absolute; top: -1px; left: 28px; width: 46px; height: 4px; border-radius: 0 0 4px 4px; background: var(--olive); }
+.card .tag {
+  display: inline-block; font-family: var(--font-mono); font-size: 13px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--olive-dark); background: var(--pill-bg); padding: 5px 12px; border-radius: 999px; margin-bottom: 18px;
+}
+.card h3 { margin-bottom: 12px; color: var(--ink); }
+.card p { font-size: 20px; }
+.card.bad::before { background: var(--danger); }
+.card.bad .tag { background: var(--danger-bg); color: var(--danger); }
+
+pre.code {
+  background: var(--code-bg); color: #e8eef2; border-radius: 16px;
+  padding: 26px 30px; font-family: var(--font-mono); font-size: 20px; line-height: 1.55;
+  white-space: pre; overflow-x: auto;
+}
+pre.code.sm { font-size: 17px; padding: 22px 26px; }
+pre.code .k { color: var(--lime); }
+pre.code .s { color: #9fd3e8; }
+pre.code .c { color: #7f97a8; font-style: italic; }
+pre.code .x { color: #ff9f8a; }
+
+.callout {
+  margin-top: 28px; padding: 20px 26px; border-left: 4px solid var(--olive);
+  background: var(--pill-bg); border-radius: 0 12px 12px 0;
+  font-size: 22px; color: var(--ink);
+}
+.callout b { font-family: var(--font-head); font-weight: 500; }
+
+.steps { list-style: none; counter-reset: s; display: grid; gap: 14px; }
+.steps li { counter-increment: s; display: flex; align-items: center; gap: 18px; font-size: 22px; color: var(--ink); }
+.steps li span { margin-left: .35em; }
+.steps li::before {
+  content: counter(s); flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-head); font-weight: 700; font-size: 20px;
+  background: var(--pill-bg); color: var(--olive-dark);
+}
+.steps li span { color: var(--body); font-weight: 300; }
+
+.tree { display: grid; grid-template-columns: max-content 1fr; column-gap: 40px; align-items: baseline; font-family: var(--font-mono); font-size: 24px; line-height: 2; color: var(--ink); }
+.tree .d { color: var(--muted); }
+.tree .f { color: var(--olive-dark); }
+.tree .why { font-family: var(--font-body); font-weight: 300; color: var(--body); font-size: 20px; }
+
+table.t { width: 100%; border-collapse: collapse; font-size: 21px; }
+.t th { text-align: left; font-family: var(--font-head); font-weight: 500; color: var(--ink); padding: 14px 18px; border-bottom: 2px solid var(--ink); }
+.t td { padding: 14px 18px; border-bottom: 1px solid var(--line); color: var(--body); vertical-align: top; }
+.t td:first-child { color: var(--ink); }
+.t code, p code, li code, .callout code { font-family: var(--font-mono); font-size: .9em; background: var(--card); border: 1px solid var(--line); padding: 1px 8px; border-radius: 6px; color: var(--ink); }
+
+/* diagram boxes */
+.box {
+  border: 2px solid var(--line); border-radius: 16px; padding: 22px 24px; background: #fff; text-align: center;
+}
+.box b { display: block; font-family: var(--font-head); font-weight: 700; font-size: 26px; color: var(--ink); }
+.box small { font-size: 18px; color: var(--body); font-weight: 300; }
+.box.main { border-color: var(--olive); background: var(--pill-bg); }
+.box.red { border-color: var(--danger); background: var(--danger-bg); }
+.arrow { text-align: center; font-size: 34px; color: var(--olive); line-height: 1; }
+.layer { display: grid; grid-template-columns: 70px 1fr 1.25fr; align-items: center; gap: 24px; padding: 20px 26px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); }
+.layer .n { font-family: var(--font-head); font-weight: 700; font-size: 44px; color: var(--olive); }
+.layer h3 { color: var(--ink); }
+.layer p { font-size: 20px; }
+.layer.top { background: var(--pill-bg); border-color: #cfdfae; }
+
+.stat-row { display: flex; gap: 0; margin-top: 54px; }
+.stat { padding-right: 44px; margin-right: 44px; border-right: 1px solid rgba(255,255,255,.18); }
+.stat:last-child { border-right: 0; }
+.stat b { display: block; font-family: var(--font-head); font-weight: 700; font-size: 40px; color: var(--lime); }
+.stat small { font-family: var(--font-mono); font-size: 14px; letter-spacing: .16em; color: rgba(255,255,255,.6); text-transform: uppercase; }
+
+/* ---------- Controls ---------- */
+.controls {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 5;
+  opacity: 0; transition: opacity .3s;
+}
+.controls.show, .controls:focus-within { opacity: 1; }
+.controls button {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(14,43,64,.2);
+  background: rgba(255,255,255,.9); color: var(--ink); font-size: 20px; cursor: pointer;
+}
+.controls button:focus-visible { outline: 3px solid var(--olive); outline-offset: 2px; }
+.progress { position: fixed; left: 0; top: 0; height: 4px; background: var(--olive); transition: width .25s; z-index: 5; }
+@media (prefers-reduced-motion: reduce) { .progress { transition: none; } }
+
+/* ---------- Print: one slide per page ---------- */
+@media print {
+  @page { size: 1600px 900px; margin: 0; }
+  body { overflow: visible; background: #fff; }
+  .viewport { position: static; display: block; }
+  .stage { transform: none !important; box-shadow: none; width: 1600px; height: auto; }
+  .slide { position: relative; display: flex !important; width: 1600px; height: 900px; page-break-after: always; break-after: page; }
+  .controls, .progress { display: none; }
+  .slide, .slide * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="viewport">
+<div class="stage" id="stage">
+
+<!-- 1. Title -->
+<section class="slide dark">
+  <div class="lockup">
+    <div class="wordmark"><img src="data:image/png;base64,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" alt="">RiSKRiCE</div>
+    <div class="div"></div>
+    <div class="meta"><b>DEVOPS MENTORSHIP</b><small>TERRAFORM TRACK · SECTION 5</small></div>
+  </div>
+  <div class="body" style="margin-top:0">
+    <span class="pill">Section 5 · Modules · ~60 min incl. lab</span>
+    <h1>Write it once.<br>Use it <span class="hl">everywhere</span>.</h1>
+    <p class="lead">Terraform modules: how real teams stop copy-pasting infrastructure and build dev and prod from the same code.</p>
+    <div class="stat-row">
+      <div class="stat"><b>~20</b><small>min concepts</small></div>
+      <div class="stat"><b>~10</b><small>min prod rules</small></div>
+      <div class="stat"><b>~30</b><small>min hands-on lab</small></div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice Academy · DevOps Portfolio Mentorship</span><span class="num"></span></div>
+</section>
+
+<!-- 2. Agenda -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Today</span>
+  <h2>What we'll <span class="hl">cover</span>.</h2>
+  <div class="body">
+    <ol class="steps">
+      <li>The problem modules solve <span>· copy-paste infrastructure</span></li>
+      <li>What a module is <span>· root vs child, inputs and outputs</span></li>
+      <li>Where modules come from <span>· local, Registry, Git</span></li>
+      <li>Production rules <span>· versions, small modules, catalog, trust</span></li>
+      <li>How teams use it <span>· company modules + dev and prod</span></li>
+      <li>Lab <span>· build it yourself</span></li>
+    </ol>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 3. Problem -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">The problem</span>
+  <h2>Three environments. Three <span class="hl">copies</span>. One bug.</h2>
+  <p class="lead">Your team needs the same web server in dev, test and prod. Without modules, you copy the code.</p>
+  <div class="body">
+    <div class="grid g3">
+      <div class="box red"><b>dev/main.tf</b><small>security group + EC2</small></div>
+      <div class="box red"><b>test/main.tf</b><small>security group + EC2 (copied)</small></div>
+      <div class="box red"><b>prod/main.tf</b><small>security group + EC2 (copied)</small></div>
+    </div>
+    <div class="callout">Someone finds port 22 open to the internet. Now you fix it in <b>three places</b>, and someone will forget one.</div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 4. Solution -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">The solution</span>
+  <h2>A module is just a <span class="hl">folder</span> of .tf files.</h2>
+  <p class="lead">Write the code once, use it many times. Fix it once, and every place that uses it gets the fix.</p>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:1fr;gap:16px;max-width:1100px">
+      <div class="box main" style="max-width:520px;margin:0 auto;width:100%"><b>modules/web-server</b><small>written once</small></div>
+      <div class="arrow">↓ &nbsp; ↓ &nbsp; ↓</div>
+      <div class="grid g3">
+        <div class="box"><b>dev</b><small>name = "dev"</small></div>
+        <div class="box"><b>test</b><small>name = "test"</small></div>
+        <div class="box"><b>prod</b><small>name = "prod"</small></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:26px">Think of it as a recipe: write it once, then only say what changes each time.</p>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 5. Root vs child -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Root vs child</span>
+  <h2>You've been writing modules <span class="hl">since Part 2</span>.</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:40px;align-items:center">
+      <div style="display:grid;gap:14px">
+        <div class="box main"><b>Root module</b><small>the folder where you run terraform apply</small></div>
+        <div class="arrow">↓ uses</div>
+        <div class="grid g2" style="gap:14px">
+          <div class="box"><b>Child module</b><small>vpc</small></div>
+          <div class="box"><b>Child module</b><small>web-server</small></div>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px">Root module</h3>
+        <p>Where you run <code>init</code>, <code>plan</code> and <code>apply</code>. Holds the provider and the backend.</p>
+        <h3 style="margin:28px 0 10px">Child module</h3>
+        <p>A folder the root module <b>uses</b> with a <code>module</code> block. It has no provider block of its own.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 6. Using a module -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Using a module</span>
+  <h2>Same recipe, <span class="hl">different values</span>.</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:40px;align-items:center">
+<pre class="code hcl">module "web_dev" {
+  source = "./modules/web-server"
+
+  name      = "dev"
+  subnet_id = "subnet-0abc..."
+}
+
+module "web_prod" {
+  source = "./modules/web-server"
+
+  name      = "prod"
+  subnet_id = "subnet-0def..."
+}</pre>
+      <div>
+        <p><code>source</code> tells Terraform where the module lives.</p>
+        <p style="margin-top:18px">Everything else is the module's <b>inputs</b>: only what changes each time.</p>
+        <div class="callout">Two web servers. Zero copied resources.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 7. Contract -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Inputs and outputs</span>
+  <h2>Inputs and outputs are the module's <span class="hl">contract</span>.</h2>
+  <div class="body">
+    <div class="grid g3">
+      <div class="card"><span class="tag">Inputs</span><h3>variables.tf</h3><p>What you give the module: <code>name</code>, <code>subnet_id</code>.</p></div>
+      <div class="card"><span class="tag">Outputs</span><h3>outputs.tf</h3><p>What it gives back: <code>module.web_dev.instance_id</code>.</p></div>
+      <div class="card"><span class="tag">Inside</span><h3>main.tf</h3><p>Hidden from callers. You don't need to know it to use the module.</p></div>
+    </div>
+    <div class="callout">Like the buttons on a microwave: you use the buttons, not the wiring. <b>Rename a variable and you break every caller.</b></div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 8. Structure -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Module structure</span>
+  <h2>Five files. Nothing <span class="hl">new</span>.</h2>
+  <div class="body">
+    <div class="tree">
+      <div class="d" style="grid-column:1/-1">modules/web-server/</div>
+      <div>├── <span class="f">main.tf</span></div><div class="why">the resources</div>
+      <div>├── <span class="f">variables.tf</span></div><div class="why">what you give it</div>
+      <div>├── <span class="f">outputs.tf</span></div><div class="why">what it gives back</div>
+      <div>├── <span class="f">versions.tf</span></div><div class="why">Terraform and provider versions it needs</div>
+      <div>└── <span class="f">README.md</span></div><div class="why">how to use it</div>
+    </div>
+    <p class="note" style="margin-top:30px">Terraform reads every .tf file in the folder. The names are a convention, but everyone uses them.</p>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 9. Sources -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Module sources</span>
+  <h2>Where modules <span class="hl">come from</span>.</h2>
+  <div class="body">
+    <div class="grid g3">
+      <div class="card"><span class="tag">Local</span><h3>Your own folder</h3>
+<pre class="code sm hcl">source = "./modules/web-server"</pre>
+        <p class="note" style="margin-top:14px">Nothing to download.</p></div>
+      <div class="card"><span class="tag">Registry</span><h3>Public modules</h3>
+<pre class="code sm hcl">source  = "terraform-aws-modules/vpc/aws"
+version = "6.5.1"</pre>
+        <p class="note" style="margin-top:14px">Pin with <code>version</code>.</p></div>
+      <div class="card"><span class="tag">Git</span><h3>Company modules</h3>
+<pre class="code sm hcl">source = "git::https://gitlab.../
+  web-server.git?ref=v1.2.0"</pre>
+        <p class="note" style="margin-top:14px">Pin with <code>?ref=</code> a tag.</p></div>
+    </div>
+    <div class="callout">Added or changed a module? Run <code>terraform init</code> again.</div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 10. Registry vs own -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Registry vs your own</span>
+  <h2>Don't reinvent the <span class="hl">VPC</span>.</h2>
+  <div class="body">
+    <div class="grid g2">
+      <div class="card"><span class="tag">Public registry</span><h3>For common building blocks</h3>
+        <p>VPC, security groups, EC2. Tested by thousands of users, ready in minutes.</p>
+        <p class="note" style="margin-top:12px">Big: the VPC module has 200+ inputs.</p></div>
+      <div class="card"><span class="tag">Your own</span><h3>For your team's rules</h3>
+        <p>Naming, tags, encryption, "our standard web service". Small and easy to read.</p>
+        <p class="note" style="margin-top:12px">You decide when it changes.</p></div>
+    </div>
+    <div class="callout">In practice, teams do both: <b>their own modules wrap public ones</b>.</div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 11. Prod lens divider -->
+<section class="slide dark">
+  <div class="lockup">
+    <div class="wordmark"><img src="data:image/png;base64,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" alt="">RiSKRiCE</div>
+  </div>
+  <div class="body" style="margin-top:0">
+    <span class="pill">Prod lens</span>
+    <h1 style="font-size:92px">How modules are used<br>in <span class="hl">production</span>.</h1>
+    <p class="lead">Four rules that separate a lab from a real platform.</p>
+  </div>
+  <div class="foot"><span>RiskRice Academy · DevOps Portfolio Mentorship</span><span class="num"></span></div>
+</section>
+
+<!-- 12. Four rules -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Prod lens</span>
+  <h2>Four rules for <span class="hl">real</span> projects.</h2>
+  <div class="body">
+    <div class="grid g4">
+      <div class="card"><span class="tag">Rule 1</span><h3>Pin to a tag</h3><p>Never a branch. <code>main</code> changes every time someone pushes.</p></div>
+      <div class="card"><span class="tag">Rule 2</span><h3>Keep it small</h3><p>One module, one job. No "god module" that creates everything.</p></div>
+      <div class="card"><span class="tag">Rule 3</span><h3>One catalog</h3><p>Company modules in one place, with version numbers.</p></div>
+      <div class="card"><span class="tag">Rule 4</span><h3>Read first</h3><p>A public module is someone else's code in your AWS account.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 13. Pin -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Rule 1 · Pin versions</span>
+  <h2>Same code today, same code <span class="hl">tomorrow</span>.</h2>
+  <div class="body">
+    <div class="grid g2">
+      <div class="card bad"><span class="tag">Don't</span>
+<pre class="code sm hcl">source = "git::https://.../vpc.git?ref=main"
+
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  <span class="x"># no version!</span>
+}</pre></div>
+      <div class="card"><span class="tag">Do</span>
+<pre class="code sm hcl">source = "git::https://.../vpc.git?ref=v1.2.0"
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "6.5.1"
+}</pre></div>
+    </div>
+    <div class="callout"><code>.terraform.lock.hcl</code> locks <b>providers only</b>, not modules. The pin is your only protection.</div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 14. Semver -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Rule 3 · Module catalog</span>
+  <h2>Version numbers <span class="hl">tell a story</span>.</h2>
+  <p class="lead">Keep company modules in one place (for example a GitLab group) and tag every release.</p>
+  <div class="body">
+    <div class="grid g3">
+      <div class="card"><span class="tag">Patch</span><h3>v1.0.0 → v1.0.1</h3><p>A small fix. Safe to upgrade.</p></div>
+      <div class="card"><span class="tag">Minor</span><h3>v1.0.0 → v1.1.0</h3><p>A new feature. Nothing breaks.</p></div>
+      <div class="card bad"><span class="tag">Major</span><h3>v1.0.0 → v2.0.0</h3><p>Something changed that can break you. Read the changelog.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 15. Read first -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Rule 4 · Read before you trust</span>
+  <h2>A real surprise from the <span class="hl">EC2 module</span>.</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:40px;align-items:center">
+<pre class="code hcl">module "ec2" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "~> 6.0"
+
+  subnet_id = var.subnet_id
+
+  <span class="c"># Without this line, the module creates its
+  # security group in the DEFAULT VPC</span>
+  security_group_vpc_id = var.vpc_id
+}</pre>
+      <div>
+        <p>Version 6 creates a security group <b>by default</b>.</p>
+        <p style="margin-top:18px">We only found out by reading the module's <b>Inputs</b> page.</p>
+        <div class="callout">Check what it creates, what it changes, and which versions it needs.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 16. Three layers -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">How teams organise it</span>
+  <h2>Three layers, each with <span class="hl">one job</span>.</h2>
+  <div class="body" style="gap:14px">
+    <div class="layer top"><span class="n">3</span><h3>Environments</h3><p><code>environments/dev</code>, <code>environments/prod</code>. Only settings change.</p></div>
+    <div class="arrow">↓ uses</div>
+    <div class="layer"><span class="n">2</span><h3>Company modules</h3><p><code>modules/network</code>, <code>modules/server</code>. Our naming, tags, encryption.</p></div>
+    <div class="arrow">↓ uses</div>
+    <div class="layer"><span class="n">1</span><h3>Public Registry modules</h3><p><code>terraform-aws-modules/vpc</code>, <code>ec2-instance</code>. The hard work.</p></div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 17. Dev vs prod -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Dev and prod</span>
+  <h2>Same code. Different <span class="hl">settings</span>.</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:40px">
+      <div>
+        <p class="note" style="margin-bottom:10px">environments/dev/terraform.tfvars</p>
+<pre class="code sm hcl">environment   = "dev"
+vpc_cidr      = "10.10.0.0/16"
+azs           = ["eu-west-1a"]
+instance_type = "t3.micro"</pre>
+      </div>
+      <div>
+        <p class="note" style="margin-bottom:10px">environments/prod/terraform.tfvars</p>
+<pre class="code sm hcl">environment   = "prod"
+vpc_cidr      = "10.20.0.0/16"
+azs           = ["eu-west-1a", "eu-west-1b"]
+instance_type = "t3.small"</pre>
+      </div>
+    </div>
+    <div class="callout"><code>main.tf</code> is identical. Each environment has <b>its own state file</b>, so destroying dev can never touch prod.</div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 18. Lab divider -->
+<section class="slide dark">
+  <div class="lockup">
+    <div class="wordmark"><img src="data:image/png;base64,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" alt="">RiSKRiCE</div>
+  </div>
+  <div class="body" style="margin-top:0">
+    <span class="pill">Hands-on · ~30 min</span>
+    <h1 style="font-size:92px">Lab: build it<br><span class="hl">yourself</span>.</h1>
+    <p class="lead">Open the lab zip and follow the README step by step. The <code style="font-family:var(--font-mono)">solution/</code> folder is there if you get stuck.</p>
+  </div>
+  <div class="foot"><span>RiskRice Academy · DevOps Portfolio Mentorship</span><span class="num"></span></div>
+</section>
+
+<!-- 19. Lab 4 -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Lab 4 · lab4-modules</span>
+  <h2>Registry VPC + your own <span class="hl">server module</span>.</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:48px;align-items:center">
+      <ol class="steps">
+        <li>Create a VPC with the Registry module</li>
+        <li>Write <code>modules/server</code> <span>· SG + EC2</span></li>
+        <li>Connect them <span>· module.vpc.vpc_id</span></li>
+        <li>Reuse it for prod <span>· 5 more lines</span></li>
+        <li>Check <code>terraform state list</code></li>
+        <li><code>terraform destroy</code></li>
+      </ol>
+      <div class="box main" style="text-align:left;padding:30px">
+        <b style="margin-bottom:10px">You're done when</b>
+        <p>The console shows your VPC and two servers, dev and prod, and every resource in the state starts with <code>module.</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 20. Lab 5 -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Lab 5 · lab5-modules-envs</span>
+  <h2>Company modules + <span class="hl">dev and prod</span>.</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:48px;align-items:center">
+      <ol class="steps">
+        <li>Write <code>modules/network</code> <span>· wraps VPC</span></li>
+        <li>Write <code>modules/server</code> <span>· wraps EC2</span></li>
+        <li>Build <code>environments/dev</code></li>
+        <li>Copy to prod, change only <code>.tfvars</code></li>
+        <li>Add a <code>CostCenter</code> tag once <span>· both envs get it</span></li>
+        <li>Destroy dev, prod survives</li>
+      </ol>
+      <div class="box main" style="text-align:left;padding:30px">
+        <b style="margin-bottom:10px">You're done when</b>
+        <p>Two VPCs, two servers (<code>t3.micro</code> and <code>t3.small</code>), two state files, and one tag change shows up in both plans.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 21. Errors -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">If something breaks</span>
+  <h2>Common errors and <span class="hl">fixes</span>.</h2>
+  <div class="body">
+    <table class="t">
+      <tr><th style="width:38%">Error</th><th>Fix</th></tr>
+      <tr><td><code>Module not installed</code></td><td>Run <code>terraform init</code> in that folder.</td></tr>
+      <tr><td><code>Unreadable module directory</code></td><td>Wrong <code>source</code> path. From <code>environments/dev</code> it's <code>../../modules/...</code></td></tr>
+      <tr><td><code>Unsupported argument</code></td><td>The module has no such input. Check its <code>variables.tf</code>.</td></tr>
+      <tr><td><code>No value for required variable</code></td><td>Missing or misspelled in <code>terraform.tfvars</code>.</td></tr>
+      <tr><td>Prod plan wants to destroy dev</td><td>Both use the same state <code>key</code>. Fix <code>prod/versions.tf</code>.</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 22. Recap -->
+<section class="slide light">
+  <div class="brand">RiskRice<span>·</span> Academy</div>
+  <span class="pill">Recap</span>
+  <h2>What to <span class="hl">remember</span>.</h2>
+  <div class="body">
+    <div class="grid g2" style="gap:20px 48px">
+      <p>A module is a folder of .tf files: write once, use many times.</p>
+      <p>Variables go in, outputs come out. That's the contract.</p>
+      <p>Use the Registry for building blocks, your own modules for your rules.</p>
+      <p>Always pin a version. Never <code>?ref=main</code>.</p>
+      <p>Same code for every environment. Only <code>.tfvars</code> changes.</p>
+      <p>One state file per environment.</p>
+    </div>
+  </div>
+  <div class="foot"><span>RiskRice DevOps Mentorship · Terraform Modules</span><span class="num"></span></div>
+</section>
+
+<!-- 23. Close -->
+<section class="slide dark">
+  <div class="lockup">
+    <div class="wordmark"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALsAAAAvCAYAAAC7Z7s/AAAOs0lEQVR4nO2dSYwc1RnHf7N6PPaYMTbGNl4xuAIBEwOBhB2hKIe0okgBpIhDpIhboj7lEuWW5JJICUmFKIqiKBIXDomyKKXsEDCYfbMxtssGGxtsgzds7NmnZ3L4v2/qTU31Nj3j2eovtaqX16+2//vet75qIse8QBgF64BmYNRtW4EW92p32zagyb0HKLn2w952GOgH+oqF+MQlPIVpR9NMH0CO+hFGwXqgA9gArAKWA2u9z82I4Ivc1tCCBoH/nY8zwHHgI+Ad4BRwEjhVLMR7p/xEqiCMgmuAkWIhPjQV/eVknwNw5L4KWI1IfSWwHVgBLEOkXgZ0ITKPAEPu73aPm937tHTHtR8BBoE+oMdtzwHn0SB4C9gLHAIGioX4vak+Tx9hFGwEHkWDb2exEO9utM+c7LMQTiVZAWwFPg8EwGZgMZLKHYjgrSQkBhG4yXs117HbQUR4+88IUnNsEJTQAHgH2AG8DhwrFuJ9kznHagijYDPwPeBO4J/Ab4uFeH8jfeZknwVw5G4D1gHXAdcA1wMbgTWI2J1MJO9IxneNYATp7Cb5032bTn8e2A+8COwEDk21mhNGwXbg+8Dtbp9/AP5YLMSvTLbPnOwziDAKbgY+i6T2HYjsqxHJBpBq0uZeswnDSE26iHT614A/A0eKhfitqdiBI/vPgRvRTPYxEAO/Bl6ZjPGck30GEEbBLcAXgFuB25D0Xu41mWqJPd3oAY4AfwH+BbxXLMTHGukwjILbSMi+FA2uj5H98DjwdL2Ga072aUYYBVchFWQz8BngHqSqbEA6txmSbSTGpencMNGYnA0YSX22gXkBeAH4E/BUI0ZsiuydyG7ocT+fAX4F/Lce9al1sgeTozLCKFgDbEE362rgPuRF6UJkWUqiI5shOMRE74mhEWmfJmc5lOs//f+s/prRud2PzrctjIKnGjAqS25rcYMhxNclbj/fAj5FHqKakEv2KYbTw7cDdyNvykZkYFpQp41EUjehmwkJgUzSG/Favc+jlJfyaQKOVvk9jWoDKf3/kvfezs3a9aHAVAT8sliIX6/S9wS46/gD4F4kGPrQ9epwTfqBfcAPgReLhfijan3mkr1BODWlFdiEjEwj+eVICqWvsfm0IVFXWrzffAHUwkTSznY0o/MeBR4AmsIoCCdB+Cakutj1SwfCOoCVQBFdt79W6zAn+yTgAh6LkS98GyL4TejiL2G8267EeN+1ufYg+/r7Ut+XtpWkOqm2I6m2JWpTgcr1n/5/uv8sF6XZH3cCvWEU9BcL8Ts1HIOhFXmkOiq0WYMGwTfDKNhTzUbIyV4HnB6+wb0eQL7wTchFeFmquUnvtJpSCaaqQLaKWaK6sWr78QdVtbb+55L33n4vpT7DRDWmHR1/s2vXjq7JAPAV4EwYBU/WQfhB5NqsBJtFtgFfB35SqXGus9cAF827D7gFeVS6kVTpQhK+mtCwhCsYr8L4ErHcvRhJbQ3N3stvO+L25Q+atJ/e7IJRxhuCeO9Pu3ZDaOCcJiF9Gm0oJ2cxksQdJDPRIkR4gBD4XbEQH808Uw9hFGwBHgG+S2LU451vn/fdRRTo+lmxEP+mXJ+5ZC8DR/DlSHrfi4i+hiRkv7iO7loQYSC5WfUIGj907/eRRXRrY/r+EDLmLAGshBK9WpGr8BPk0juPcmFOItfeKfffXiRlB9x2kOzjuAzNcCuRencNslu6kfRdhtS9nUBVsqPrdQoRuSvjevjodMf6SBgFrxYL8RtZHeZk9+B08U0o6epuRPTNJPkolntyKfzepg4Y0mpEOpHLpKdJcZPuNlCOIyIfBk6gHJfT7tWDzsskuS/th2rxdKThVL5uNAi6kTtyHQqm/buGLlrcsQ2QPbjaGH89Vrm2D4ZRcKZYiI+kO8zJzpgU3wLcgEi+jSSLECTNLOc7fZFrRdqIqyXPxf/cRiLdfYPX/PMXSWaPEpLIHyMp+gFwADiGCNQ/3Sm7Lpw/FtIPo2A1GlDdYRSsrmEADaIZpgedT1rt84WB5e93IY/YLhTRHYcFrbOHUXAXkjQ3InfhMpJp1xKv7EJDdnLUpYZlHw6jm92FpvtelJy1D5H7MJLkp4HBYiH+cEaOtgGEUXAt8AskgJpJ4hWQzEIwPn/oQ5Sg9qN0WvCCkOxOqrSR6NobUaTvZmRwlkh84umCh3pTZacT5xHJO9Axn0Y3dg+wG93oY9Oda34JMYAG8OeYqLdD9n1Zi2bmG8Io6C0W4nfth3lPdkf0y5Ef/Cbgiyg/3Iwqy+DrJFFRBsn2dmShnDuwVOVzGpVUmGHgrDuuE8B7KNPwTfe+tViID1fpfy6ihIpF+hDZ/evcRqLKpNWblcCX0Ow2RvZ5p8Y4w6gDSepNSHJfj4og1iLJPorInYUSiepSLbXW16H9G+Ebeab6ZJE9ayCZq2/Ie/UhPXQPygU5Ahyfi6pJvQij4GHgO+gersho4l9n+9yLVLkfo4S0YzDHJbsregCRux3lhl8LrEfSe7V7tZOoI35uShZaqvxeDTZYhlP7M8FiKQFZ++h32z6kkuxGJD+OSH6+WIg/aODY5iJ2oFTobWV+T0eKB9C1vxK4o1iIn7Af55Rk9wqNO5GEvgJJ69VI/15HIr2XMr0uQj/S6Ev2Eol0bqb8DOJjCHkdBoH30Q3eARwtFuJdU3fIcxNhFDyE0n3XVmk6hMhuQbz9wLfN7z6rJLtLqjKX3wAK6qxCOli3e78KTWfrkDG5mKRszarnK+nZ6TB3I8hyF1reSC2emz405X4CPINywXcDp7P8xAsYe5ALtYtsQ9XsJnNBNiPBYX79N2AaJLvTmY1EfkW7rWNiU/h6r10ryjdZ4V7dyHhcighvYXk/gardveopWStnJE6G9NUMzqx+LRGs1/22B3gJGZuvFgvxwUkcx4JAGAVPoMKX9ZQXImZDmSp5ChWGP1YsxDszyZ7l9HfRxXYSnbMTGYGXI0L66kWH951FH1ci8pqB6OvO5vIz4vp6czo0nh7BtXhM7EIYLlXljwWjbHBeQLr4HuAp4CBwcAHq4XXBedTuB36KZn4Q99IwCV9C194M1ceA/4xTY8IouBqFyjvCKLifxFnfiUZUl3tvakMHInAXksR+5psR0IxD02UtXdRWqWpivAFXa7VMVn5IFmqRwJNBpX7tfHsRwUtIJ38NeBatwXKy0TrNBYQuFCF+DSXklRNWLd7WktBWI4/cs2Nkd5K7ADyEPBqLkHfgAiKaeT760aiBpPjAzx0Z9n6DJKRtBzBK4hnxB5uf3Zd25ZHxGZLpyv+/PwPYNt2mFqT355N7hIlk9/c/jG7OIArTv4yCP8fR6lrz3mXYKFz0dDlSa1eiHCVLWy63opmPZhLNYivQ5pNtFKkkW5DbpkSSxea7ytLTh3kd/Gy+QRIvRD8JwcsVJsDk8k2MyFn/rZT7XUuJWjnJna4msu98//hF5Av/H/AccDhXVcojjIINJGnCm5DXZSvSFmzlhXbER6tJrYZWdA9NEDf7ZC+5ndio8W9opdKwtEfHz1MoZfxufVu+s5+SSsb7aijnF/elvqHWsH+1/Y+iC+inuw6gcP4hRPB/ICmek7wMwii4CZH7OrQY0gakdoA0CxgvGP1a11pgmkYrMOwTcYnbQRMT00lhYqSq1p2Vq0TPej8TqFSKVqlNL4lK10uybsqrQM9UrE04H+GMzU4UEb0DuAsFAJeR5PwYpsJbaIK65JP9CuTya2O8JG9O/Wmuo9bB6hdMmP5n/+93r3PIL/40UllOTyb3e6HARbzvAL6MFocyD53Zb+WquBrBGH99sltVie101GvsFw8vJPj54ra+ywDSyZ9Bhucu4KM8CFQerl7gVuRJuRupy5bnYnUCtbqQ64UF7oZ8sncjY8Bf1mEq8rdnWk2pFxZqtvrMDhI15SByf+0D3s6DQNURRsHtwMPAV5H2sJjED56Odvsqb728yXJIXEQFKy8XC/GJVndAa5AlbJ4W3123kDBEssyalYMdQ27DXUDcyCqyCwmOU7ejNdZvRZI8y9U8VcIwTfR+pA69hZa8Htt5C5paljF908lshrkM+9CSaudQYfALaMXYd8v/NUca7okZjwJfQ9J8GeMXPILp5Vg/uo8fAI9bMp2/85VMfCTJfEBWcMj3iVuxsi2n9jIyOt+eqsebLCS4JTC+gdaKWY48LyPUlv3ZCMyeMptqD/D7YiF+3hr4ZO90n33DNI2ZGgD15LWUvG1W2xZUyHseRTQPIJK/hEL486WkbaawiMTGsWhyK/K61Ep4f/0bgwUmm0h4a/e4372/4Pa7A3iyWIjf9Dv1F83sYnzF9myS7LXYELYCrp3TCLroVpi8iMRgOYD08KMoEeuSPxxrvqJYiPeGUdCPZsjNqKBmO4rMLyF5sJmll/iwJ3sYye2+2/fNJAauXz45gOoAXgL+XizEf8s6NiNGG0k22WzV1ysNPvMc+QsF9aCC5A9R/eZzaHGgGKV+Lsql+PTAqX+HgOdh7CkaG9EqDtciN/cmEne3xXZMrfQfddPC+FXXzJNzxrV9H3nIngf2VVoi2ye7v+TwbCU8ZOvcJTRNXkTG5Rl0AQ6japWD6Alveeh+BuDUiTfDKNiL7pOtU78FrRzWhYh/GYmOD0kE1SL7/UhgnUXqyn5E9nPA2WpF50b2DdS3nNtkUC5Ft160oGnrU5J1Uc6hapQjiOC97ruBPKI5e1AsxAfS33kPTzMvoM3g61NNz6P72oMWear/mUouunUnWtR9HdNXqlcL2QdJ6ggXkSRamR53FrmTTqBlJE6SLOvWl0cxc1SCpQasIqlCmgmMIEn9KSL0OaSSHEc6t61NaDkpF3OVJEe98B9YdZZk6YdqyJLKWSnB1m4YTT9DXpsBkqcon0MeElto8ywieB8i9tEajilHjopoAgij4B7gQSThO0kScyz7zN5bHrptzYL2YbODbyzYOoTHEZGbSNYrtASrwcnoYTly1IoxaRxGwVYk1QeRsWpJYFYvmpV26buL/OWRR0n826D87lw655hR/B/LY4wyXOzq7gAAAABJRU5ErkJggg==" alt="">RiSKRiCE</div>
+    <div class="div"></div>
+    <div class="meta"><b>DEVOPS MENTORSHIP</b><small>TERRAFORM TRACK · SECTION 5</small></div>
+  </div>
+  <div class="body" style="margin-top:0">
+    <span class="pill">Questions</span>
+    <h1>Questions?</h1>
+    <p class="lead">Your team needs a <b style="color:#fff;font-weight:500">test</b> environment. What would you add, and what would you change?</p>
+  </div>
+  <div class="foot"><span>RiskRice Academy · riskrice.com</span><span class="num"></span></div>
+</section>
+
+</div>
+</div>
+
+<div class="controls">
+  <button id="prev" aria-label="Previous slide">‹</button>
+  <button id="next" aria-label="Next slide">›</button>
+</div>
+
+<script>
+(function () {
+  // Minimal HCL highlighter for code blocks
+  document.querySelectorAll("pre.hcl").forEach(function (pre) {
+    if (pre.querySelector("span")) {
+      // keep hand-marked spans, highlight only strings outside them
+      pre.innerHTML = pre.innerHTML.replace(/(^|[^=])("(?:[^"<\\]|\\.)*")/g, function (m, a, s) { return a + '<span class="s">' + s + '</span>'; });
+      return;
+    }
+    var html = pre.textContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    html = html.replace(/("(?:[^"\\]|\\.)*")|(#[^\n]*)|^(\s*)(module|resource|variable|output|terraform|provider|data)\b/gm,
+      function (m, str, com, ws, kw) {
+        if (str) return '<span class="s">' + str + '</span>';
+        if (com) return '<span class="c">' + com + '</span>';
+        return ws + '<span class="k">' + kw + '</span>';
+      });
+    pre.innerHTML = html;
+  });
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var total = slides.length;
+  var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+  slides.forEach(function (s, i) {
+    var num = s.querySelector(".num");
+    if (num) num.textContent = pad(i + 1) + " / " + pad(total);
+  });
+
+  var current = 0;
+  try {
+    var fromHash = parseInt((location.hash || "").replace("#s", ""), 10);
+    if (fromHash >= 1 && fromHash <= total) current = fromHash - 1;
+  } catch (e) {}
+
+  function show(i) {
+    current = Math.max(0, Math.min(total - 1, i));
+    slides.forEach(function (s, k) { s.classList.toggle("active", k === current); });
+    document.getElementById("progress").style.width = ((current + 1) / total * 100) + "%";
+    if (history.replaceState) history.replaceState(null, "", "#s" + (current + 1));
+  }
+
+  function fit() {
+    var stage = document.getElementById("stage");
+    var scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = "scale(" + scale + ")";
+  }
+
+  document.getElementById("prev").addEventListener("click", function () { show(current - 1); });
+  document.getElementById("next").addEventListener("click", function () { show(current + 1); });
+  document.addEventListener("keydown", function (e) {
+    if (["ArrowRight", "PageDown", " ", "Enter"].indexOf(e.key) > -1) { e.preventDefault(); show(current + 1); }
+    if (["ArrowLeft", "PageUp", "Backspace"].indexOf(e.key) > -1) { e.preventDefault(); show(current - 1); }
+    if (e.key === "Home") show(0);
+    if (e.key === "End") show(total - 1);
+    if (e.key === "f" && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  });
+  var touchX = null;
+  document.addEventListener("touchstart", function (e) { touchX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) show(current + (dx < 0 ? 1 : -1));
+    touchX = null;
+  });
+
+  var ctrl = document.querySelector(".controls"), hideT;
+  document.addEventListener("mousemove", function () {
+    ctrl.classList.add("show"); clearTimeout(hideT);
+    hideT = setTimeout(function () { ctrl.classList.remove("show"); }, 2000);
+  });
+  window.addEventListener("resize", fit);
+  fit();
+  show(current);
+})();
+</script>
+</body>
+</html>
